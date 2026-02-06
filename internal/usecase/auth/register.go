@@ -2,18 +2,21 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 
 	"github.com/tomtom2k/kairo-anchor-server/internal/domain/user"
 )
 
 type RegisterUseCase struct {
-	repo   user.Repository
-	hasher user.PasswordHasher
+	repo         user.Repository
+	hasher       user.PasswordHasher
+	emailService user.EmailService
 }
 
-func NewRegisterUseCase(r user.Repository, h user.PasswordHasher) *RegisterUseCase {
-	return &RegisterUseCase{r, h}
+func NewRegisterUseCase(r user.Repository, h user.PasswordHasher, e user.EmailService) *RegisterUseCase {
+	return &RegisterUseCase{r, h, e}
 }
 
 func (r *RegisterUseCase) Execute(ctx context.Context, email, password string) error {
@@ -32,11 +35,32 @@ func (r *RegisterUseCase) Execute(ctx context.Context, email, password string) e
 		return err
 	}
 
-	// Create user
-	user := &user.User{
-		Email:    email,
-		Password: passwordHash,
+	// Generate activation token
+	activationToken, err := generateToken()
+	if err != nil {
+		return err
 	}
 
-	return r.repo.Create(ctx, user)
+	// Create user (inactive by default)
+	u := &user.User{
+		Email:           email,
+		Password:        passwordHash,
+		IsActive:        false,
+		ActivationToken: &activationToken,
+	}
+
+	if err := r.repo.Create(ctx, u); err != nil {
+		return err
+	}
+
+	// Send activation email
+	return r.emailService.SendActivationEmail(email, activationToken)
+}
+
+func generateToken() (string, error) {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }
