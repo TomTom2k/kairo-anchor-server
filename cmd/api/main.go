@@ -82,6 +82,9 @@ func main() {
 	// Setup Gin router
 	r := gin.Default()
 
+	// Add recovery middleware to catch panics
+	r.Use(http.Recovery())
+
 	// Swagger documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -104,7 +107,7 @@ func main() {
 
 	// Health check
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
+		http.SendSuccess(c, 200, gin.H{"status": "ok"}, "Service is healthy")
 	})
 
 	// Start server

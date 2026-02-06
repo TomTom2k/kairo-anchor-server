@@ -41,26 +41,24 @@ func NewHandler(
 // @Accept json
 // @Produce json
 // @Param request body RegisterRequest true "Register Request"
-// @Success 201 {object} MessageResponse
-// @Failure 400 {object} ErrorResponse
+// @Success 201 {object} APIResponse
+// @Failure 400 {object} APIErrorResponse
 // @Router /auth/register [post]
 func (h *Handler) Register(c *gin.Context) {
 	var req RegisterRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		SendError(c, http.StatusBadRequest, ErrCodeValidation, err.Error())
 		return
 	}
 
 	err := h.register.Execute(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		SendError(c, http.StatusBadRequest, "REGISTRATION_FAILED", err.Error())
 		return
 	}
 
-	c.JSON(http.StatusCreated, MessageResponse{
-		Message: "Registration successful, please check your email to activate your account",
-	})
+	SendSuccess(c, http.StatusCreated, nil, "Registration successful, please check your email to activate your account")
 }
 
 // Login godoc
@@ -70,35 +68,34 @@ func (h *Handler) Register(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body LoginRequest true "Login Request"
-// @Success 200 {object} LoginResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 401 {object} ErrorResponse
+// @Success 200 {object} APIResponse
+// @Failure 400 {object} APIErrorResponse
+// @Failure 401 {object} APIErrorResponse
 // @Router /auth/login [post]
 func (h *Handler) Login(c *gin.Context) {
 	var req LoginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		SendError(c, http.StatusBadRequest, ErrCodeValidation, err.Error())
 		return
 	}
 
 	result, err := h.login.Execute(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: err.Error()})
+		SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Invalid email or password")
 		return
 	}
 
-	c.JSON(http.StatusOK, LoginResponse{
-		Token: result.Token,
-		User: ProfileResponse{
+	SendSuccess(c, http.StatusOK, gin.H{
+		"token": result.Token,
+		"user": ProfileResponse{
 			ID:        result.User.ID,
 			Email:     result.User.Email,
 			IsActive:  result.User.IsActive,
 			CreatedAt: result.User.CreatedAt,
 			UpdatedAt: result.User.UpdatedAt,
 		},
-		Message: "Login successful",
-	})
+	}, "Login successful")
 }
 
 // GetProfile godoc
@@ -108,35 +105,35 @@ func (h *Handler) Login(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} ProfileResponse
-// @Failure 401 {object} ErrorResponse
-// @Failure 404 {object} ErrorResponse
+// @Success 200 {object} APIResponse
+// @Failure 401 {object} APIErrorResponse
+// @Failure 404 {object} APIErrorResponse
 // @Router /auth/profile [get]
 func (h *Handler) GetProfile(c *gin.Context) {
 	userID, err := GetUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Unauthorized"})
+		SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Unauthorized")
 		return
 	}
 
 	user, err := h.getProfile.Execute(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		SendInternalError(c, err)
 		return
 	}
 
 	if user == nil {
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "User not found"})
+		SendError(c, http.StatusNotFound, ErrCodeNotFound, "User not found")
 		return
 	}
 
-	c.JSON(http.StatusOK, ProfileResponse{
+	SendSuccess(c, http.StatusOK, ProfileResponse{
 		ID:        user.ID,
 		Email:     user.Email,
 		IsActive:  user.IsActive,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
-	})
+	}, "")
 }
 
 // ActivateAccount godoc
@@ -146,26 +143,24 @@ func (h *Handler) GetProfile(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body ActivateAccountRequest true "Activate Account Request"
-// @Success 200 {object} MessageResponse
-// @Failure 400 {object} ErrorResponse
+// @Success 200 {object} APIResponse
+// @Failure 400 {object} APIErrorResponse
 // @Router /auth/activate [post]
 func (h *Handler) ActivateAccount(c *gin.Context) {
 	var req ActivateAccountRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		SendError(c, http.StatusBadRequest, ErrCodeValidation, err.Error())
 		return
 	}
 
 	err := h.activate.Execute(c.Request.Context(), req.Token)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		SendError(c, http.StatusBadRequest, "ACTIVATION_FAILED", err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, MessageResponse{
-		Message: "Account activated successfully, you can now login",
-	})
+	SendSuccess(c, http.StatusOK, nil, "Account activated successfully, you can now login")
 }
 
 // ForgotPassword godoc
@@ -175,26 +170,24 @@ func (h *Handler) ActivateAccount(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body ForgotPasswordRequest true "Forgot Password Request"
-// @Success 200 {object} MessageResponse
-// @Failure 400 {object} ErrorResponse
+// @Success 200 {object} APIResponse
+// @Failure 400 {object} APIErrorResponse
 // @Router /auth/forgot-password [post]
 func (h *Handler) ForgotPassword(c *gin.Context) {
 	var req ForgotPasswordRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		SendError(c, http.StatusBadRequest, ErrCodeValidation, err.Error())
 		return
 	}
 
 	err := h.forgotPassword.Execute(c.Request.Context(), req.Email)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		SendError(c, http.StatusBadRequest, "PASSWORD_RESET_FAILED", err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, MessageResponse{
-		Message: "Password reset email sent, please check your email",
-	})
+	SendSuccess(c, http.StatusOK, nil, "Password reset email sent, please check your email")
 }
 
 // ChangePassword godoc
@@ -204,24 +197,22 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body ChangePasswordRequest true "Change Password Request"
-// @Success 200 {object} MessageResponse
-// @Failure 400 {object} ErrorResponse
+// @Success 200 {object} APIResponse
+// @Failure 400 {object} APIErrorResponse
 // @Router /auth/change-password [post]
 func (h *Handler) ChangePassword(c *gin.Context) {
 	var req ChangePasswordRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		SendError(c, http.StatusBadRequest, ErrCodeValidation, err.Error())
 		return
 	}
 
 	err := h.changePassword.Execute(c.Request.Context(), req.Token, req.NewPassword)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		SendError(c, http.StatusBadRequest, "PASSWORD_CHANGE_FAILED", err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, MessageResponse{
-		Message: "Password changed successfully, you can now login with your new password",
-	})
+	SendSuccess(c, http.StatusOK, nil, "Password changed successfully, you can now login with your new password")
 }

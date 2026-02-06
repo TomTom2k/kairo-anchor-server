@@ -1,5 +1,32 @@
 basePath: /api
 definitions:
+  http.APIError:
+    properties:
+      code:
+        example: VALIDATION_ERROR
+        type: string
+      message:
+        example: Invalid input data
+        type: string
+    type: object
+  http.APIErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/http.APIError'
+      success:
+        example: false
+        type: boolean
+    type: object
+  http.APIResponse:
+    properties:
+      data: {}
+      message:
+        example: Operation successful
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
   http.ActivateAccountRequest:
     properties:
       token:
@@ -21,12 +48,6 @@ definitions:
     - new_password
     - token
     type: object
-  http.ErrorResponse:
-    properties:
-      error:
-        example: Error message
-        type: string
-    type: object
   http.ForgotPasswordRequest:
     properties:
       email:
@@ -46,41 +67,6 @@ definitions:
     required:
     - email
     - password
-    type: object
-  http.LoginResponse:
-    properties:
-      message:
-        example: Login successful
-        type: string
-      token:
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        type: string
-      user:
-        $ref: '#/definitions/http.ProfileResponse'
-    type: object
-  http.MessageResponse:
-    properties:
-      message:
-        example: Success
-        type: string
-    type: object
-  http.ProfileResponse:
-    properties:
-      created_at:
-        example: "2024-01-01T00:00:00Z"
-        type: string
-      email:
-        example: user@example.com
-        type: string
-      id:
-        example: 123e4567-e89b-12d3-a456-426614174000
-        type: string
-      is_active:
-        example: true
-        type: boolean
-      updated_at:
-        example: "2024-01-01T00:00:00Z"
-        type: string
     type: object
   http.RegisterRequest:
     properties:
@@ -126,11 +112,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/http.MessageResponse'
+            $ref: '#/definitions/http.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.APIErrorResponse'
       summary: Activate user account
       tags:
       - auth
@@ -152,11 +138,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/http.MessageResponse'
+            $ref: '#/definitions/http.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.APIErrorResponse'
       summary: Change password
       tags:
       - auth
@@ -178,11 +164,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/http.MessageResponse'
+            $ref: '#/definitions/http.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.APIErrorResponse'
       summary: Request password reset
       tags:
       - auth
@@ -204,15 +190,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/http.LoginResponse'
+            $ref: '#/definitions/http.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.APIErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.APIErrorResponse'
       summary: Login user
       tags:
       - auth
@@ -227,15 +213,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/http.ProfileResponse'
+            $ref: '#/definitions/http.APIResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.APIErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.APIErrorResponse'
       security:
       - BearerAuth: []
       summary: Get user profile
@@ -259,11 +245,11 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/http.MessageResponse'
+            $ref: '#/definitions/http.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/http.ErrorResponse'
+            $ref: '#/definitions/http.APIErrorResponse'
       summary: Register a new user
       tags:
       - auth

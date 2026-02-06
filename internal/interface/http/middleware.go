@@ -2,7 +2,9 @@ package http
 
 import (
 	"errors"
+	"log"
 	"net/http"
+	"runtime/debug"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -22,12 +24,29 @@ func NewAuthMiddleware(ts TokenService) *AuthMiddleware {
 	return &AuthMiddleware{tokenService: ts}
 }
 
+// Recovery returns a middleware that recovers from panics and logs the error
+func Recovery() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		defer func() {
+			if err := recover(); err != nil {
+				// Log the panic with stack trace
+				log.Printf("[PANIC RECOVERED] %v\n%s", err, debug.Stack())
+
+				// Send generic error response to client
+				SendError(c, http.StatusInternalServerError, ErrCodeInternal, "Something went wrong")
+				c.Abort()
+			}
+		}()
+		c.Next()
+	}
+}
+
 func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get token from Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Authorization header required"})
+			SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Authorization header required")
 			c.Abort()
 			return
 		}
@@ -35,7 +54,7 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 		// Check Bearer prefix
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid authorization header format"})
+			SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Invalid authorization header format")
 			c.Abort()
 			return
 		}
@@ -45,7 +64,7 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 		// Validate token
 		userID, err := m.tokenService.Validate(token)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid or expired token"})
+			SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Invalid or expired token")
 			c.Abort()
 			return
 		}

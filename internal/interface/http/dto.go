@@ -27,20 +27,6 @@ type ChangePasswordRequest struct {
 }
 
 // Response DTOs
-type MessageResponse struct {
-	Message string `json:"message" example:"Success"`
-}
-
-type ErrorResponse struct {
-	Error string `json:"error" example:"Error message"`
-}
-
-type LoginResponse struct {
-	Token   string          `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
-	User    ProfileResponse `json:"user"`
-	Message string          `json:"message" example:"Login successful"`
-}
-
 type ProfileResponse struct {
 	ID        string    `json:"id" example:"123e4567-e89b-12d3-a456-426614174000"`
 	Email     string    `json:"email" example:"user@example.com"`
