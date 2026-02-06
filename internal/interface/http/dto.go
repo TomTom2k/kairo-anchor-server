@@ -26,6 +26,12 @@ type ChangePasswordRequest struct {
 	NewPassword string `json:"new_password" binding:"required,min=6" example:"newpassword123"`
 }
 
+type ResetPasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required" example:"oldpassword123"`
+	NewPassword string `json:"new_password" binding:"required,min=6" example:"newpassword123"`
+}
+
+
 // Response DTOs
 type ProfileResponse struct {
 	ID        string    `json:"id" example:"123e4567-e89b-12d3-a456-426614174000"`

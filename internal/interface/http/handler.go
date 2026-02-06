@@ -14,7 +14,9 @@ type Handler struct {
 	activate       *auth.ActivateAccountUseCase
 	forgotPassword *auth.ForgotPasswordUseCase
 	changePassword *auth.ChangePasswordUseCase
+	resetPassword  *auth.ResetPasswordUseCase
 }
+
 
 func NewHandler(
 	r *auth.RegisterUseCase,
@@ -23,6 +25,7 @@ func NewHandler(
 	a *auth.ActivateAccountUseCase,
 	fp *auth.ForgotPasswordUseCase,
 	cp *auth.ChangePasswordUseCase,
+	rp *auth.ResetPasswordUseCase,
 ) *Handler {
 	return &Handler{
 		register:       r,
@@ -31,8 +34,10 @@ func NewHandler(
 		activate:       a,
 		forgotPassword: fp,
 		changePassword: cp,
+		resetPassword:  rp,
 	}
 }
+
 
 // Register godoc
 // @Summary Register a new user
@@ -215,4 +220,38 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 	}
 
 	SendSuccess(c, http.StatusOK, nil, "Password changed successfully, you can now login with your new password")
+}
+
+// ResetPassword godoc
+// @Summary Reset password
+// @Description Reset password while logged in (requires old password)
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body ResetPasswordRequest true "Reset Password Request"
+// @Success 200 {object} APIResponse
+// @Failure 400 {object} APIErrorResponse
+// @Failure 401 {object} APIErrorResponse
+// @Router /auth/reset-password [post]
+func (h *Handler) ResetPassword(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Unauthorized")
+		return
+	}
+
+	var req ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		SendError(c, http.StatusBadRequest, ErrCodeValidation, err.Error())
+		return
+	}
+
+	err = h.resetPassword.Execute(c.Request.Context(), userID, req.OldPassword, req.NewPassword)
+	if err != nil {
+		SendError(c, http.StatusBadRequest, "PASSWORD_RESET_FAILED", err.Error())
+		return
+	}
+
+	SendSuccess(c, http.StatusOK, nil, "Password reset successfully")
 }

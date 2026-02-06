@@ -74,9 +74,11 @@ func main() {
 	activateUC := auth.NewActivateAccountUseCase(userRepo)
 	forgotPasswordUC := auth.NewForgotPasswordUseCase(userRepo, emailService)
 	changePasswordUC := auth.NewChangePasswordUseCase(userRepo, hasher)
+	resetPasswordUC := auth.NewResetPasswordUseCase(userRepo, hasher)
 
 	// Initialize HTTP handler and middleware
-	handler := http.NewHandler(registerUC, loginUC, getProfileUC, activateUC, forgotPasswordUC, changePasswordUC)
+	handler := http.NewHandler(registerUC, loginUC, getProfileUC, activateUC, forgotPasswordUC, changePasswordUC, resetPasswordUC)
+
 	authMiddleware := http.NewAuthMiddleware(tokenService)
 
 	// Setup Gin router
@@ -102,8 +104,10 @@ func main() {
 
 			// Protected routes
 			authGroup.GET("/profile", authMiddleware.RequireAuth(), handler.GetProfile)
+			authGroup.POST("/reset-password", authMiddleware.RequireAuth(), handler.ResetPassword)
 		}
 	}
+
 
 	// Health check
 	r.GET("/health", func(c *gin.Context) {
