@@ -81,6 +81,19 @@ definitions:
     - email
     - password
     type: object
+  http.ResetPasswordRequest:
+    properties:
+      new_password:
+        example: newpassword123
+        minLength: 6
+        type: string
+      old_password:
+        example: oldpassword123
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -251,6 +264,38 @@ paths:
           schema:
             $ref: '#/definitions/http.APIErrorResponse'
       summary: Register a new user
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Reset password while logged in (requires old password)
+      parameters:
+      - description: Reset Password Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Reset password
       tags:
       - auth
 securityDefinitions:
