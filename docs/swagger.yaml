@@ -48,6 +48,58 @@ definitions:
     - new_password
     - token
     type: object
+  http.CreateProjectRequest:
+    properties:
+      description:
+        example: Xây dựng hệ thống quản lý kho thông minh
+        type: string
+      endDate:
+        example: "2024-06-30T00:00:00Z"
+        type: string
+      name:
+        example: Hệ thống quản lý kho
+        type: string
+      progress:
+        example: 65
+        maximum: 100
+        minimum: 0
+        type: integer
+      startDate:
+        example: "2024-01-15T00:00:00Z"
+        type: string
+      status:
+        enum:
+        - active
+        - pending
+        - completed
+        example: active
+        type: string
+    required:
+    - name
+    - startDate
+    - status
+    type: object
+  http.DocumentDTO:
+    properties:
+      id:
+        example: d1
+        type: string
+      name:
+        example: Spec tài liệu.pdf
+        type: string
+      size:
+        example: 2.4 MB
+        type: string
+      type:
+        example: pdf
+        type: string
+      updatedAt:
+        example: "2024-01-20T00:00:00Z"
+        type: string
+    required:
+    - name
+    - type
+    type: object
   http.ForgotPasswordRequest:
     properties:
       email:
@@ -67,6 +119,47 @@ definitions:
     required:
     - email
     - password
+    type: object
+  http.ProjectResponse:
+    properties:
+      createdAt:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      description:
+        example: Xây dựng hệ thống quản lý kho thông minh
+        type: string
+      documents:
+        items:
+          $ref: '#/definitions/http.DocumentDTO'
+        type: array
+      endDate:
+        example: "2024-06-30T00:00:00Z"
+        type: string
+      id:
+        example: "1"
+        type: string
+      name:
+        example: Hệ thống quản lý kho
+        type: string
+      progress:
+        example: 65
+        type: integer
+      startDate:
+        example: "2024-01-15T00:00:00Z"
+        type: string
+      status:
+        example: active
+        type: string
+      tasks:
+        items:
+          $ref: '#/definitions/http.TaskDTO'
+        type: array
+      updatedAt:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      userId:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
     type: object
   http.RegisterRequest:
     properties:
@@ -94,17 +187,82 @@ definitions:
     - new_password
     - old_password
     type: object
+  http.TaskDTO:
+    properties:
+      dueDate:
+        example: "2024-02-01T00:00:00Z"
+        type: string
+      id:
+        example: t1
+        type: string
+      priority:
+        enum:
+        - low
+        - medium
+        - high
+        example: high
+        type: string
+      status:
+        enum:
+        - todo
+        - in-progress
+        - completed
+        example: completed
+        type: string
+      title:
+        example: Thiết kế Database
+        type: string
+    required:
+    - priority
+    - status
+    - title
+    type: object
+  http.UpdateProjectRequest:
+    properties:
+      description:
+        example: Xây dựng hệ thống quản lý kho thông minh
+        type: string
+      documents:
+        items:
+          $ref: '#/definitions/http.DocumentDTO'
+        type: array
+      endDate:
+        example: "2024-06-30T00:00:00Z"
+        type: string
+      name:
+        example: Hệ thống quản lý kho
+        type: string
+      progress:
+        example: 65
+        maximum: 100
+        minimum: 0
+        type: integer
+      startDate:
+        example: "2024-01-15T00:00:00Z"
+        type: string
+      status:
+        enum:
+        - active
+        - pending
+        - completed
+        example: active
+        type: string
+      tasks:
+        items:
+          $ref: '#/definitions/http.TaskDTO'
+        type: array
+    type: object
 host: localhost:8080
 info:
   contact:
     email: support@kairo-anchor.com
     name: API Support
-  description: Authentication API with JWT tokens for Kairo Anchor application
+  description: API with authentication and Project management for Kairo Anchor application
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
   termsOfService: http://swagger.io/terms/
-  title: Kairo Anchor Authentication API
+  title: Kairo Anchor API
   version: "1.0"
 paths:
   /auth/activate:
@@ -298,6 +456,185 @@ paths:
       summary: Reset password
       tags:
       - auth
+  /projects:
+    get:
+      consumes:
+      - application/json
+      description: Get all projects for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/http.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/http.ProjectResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all projects
+      tags:
+      - projects
+    post:
+      consumes:
+      - application/json
+      description: Create a new project for the authenticated user
+      parameters:
+      - description: Create Project Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.CreateProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/http.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/http.ProjectResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new project
+      tags:
+      - projects
+  /projects/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a project by ID
+      parameters:
+      - description: Project ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a project
+      tags:
+      - projects
+    get:
+      consumes:
+      - application/json
+      description: Get a project by ID
+      parameters:
+      - description: Project ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/http.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/http.ProjectResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a project
+      tags:
+      - projects
+    put:
+      consumes:
+      - application/json
+      description: Update an existing project
+      parameters:
+      - description: Project ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update Project Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.UpdateProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/http.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/http.ProjectResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.APIErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a project
+      tags:
+      - projects
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

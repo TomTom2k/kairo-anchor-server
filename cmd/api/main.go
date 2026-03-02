@@ -87,10 +87,21 @@ func main() {
 	deleteProjectUC := projectUC.NewDeleteProjectUseCase(projectRepo)
 	getProjectUC := projectUC.NewGetProjectUseCase(projectRepo)
 	listProjectsUC := projectUC.NewListProjectsUseCase(projectRepo)
+	addTaskUC := projectUC.NewAddTaskUseCase(projectRepo)
+	updateTaskUC := projectUC.NewUpdateTaskUseCase(projectRepo)
+	deleteTaskUC := projectUC.NewDeleteTaskUseCase(projectRepo)
+	reorderTasksUC := projectUC.NewReorderTasksUseCase(projectRepo)
+	addDocumentUC := projectUC.NewAddDocumentUseCase(projectRepo)
+	updateDocumentUC := projectUC.NewUpdateDocumentUseCase(projectRepo)
+	deleteDocumentUC := projectUC.NewDeleteDocumentUseCase(projectRepo)
 
 	// Initialize HTTP handlers
 	authHandler := http.NewHandler(registerUC, loginUC, getProfileUC, activateUC, forgotPasswordUC, changePasswordUC, resetPasswordUC)
-	projectHandler := http.NewProjectHandler(createProjectUC, updateProjectUC, deleteProjectUC, getProjectUC, listProjectsUC)
+	projectHandler := http.NewProjectHandler(
+		createProjectUC, updateProjectUC, deleteProjectUC, getProjectUC, listProjectsUC,
+		addTaskUC, updateTaskUC, deleteTaskUC, reorderTasksUC,
+		addDocumentUC, updateDocumentUC, deleteDocumentUC,
+	)
 
 	authMiddleware := http.NewAuthMiddleware(tokenService)
 
@@ -138,6 +149,15 @@ func main() {
 			projectGroup.GET("/:id", projectHandler.GetProject)
 			projectGroup.PUT("/:id", projectHandler.UpdateProject)
 			projectGroup.DELETE("/:id", projectHandler.DeleteProject)
+			// Task API
+			projectGroup.POST("/:id/tasks", projectHandler.AddTask)
+			projectGroup.PUT("/:id/tasks/order", projectHandler.ReorderTasks)
+			projectGroup.PUT("/:id/tasks/:taskId", projectHandler.UpdateTask)
+			projectGroup.DELETE("/:id/tasks/:taskId", projectHandler.DeleteTask)
+			// Document API
+			projectGroup.POST("/:id/documents", projectHandler.AddDocument)
+			projectGroup.PUT("/:id/documents/:docId", projectHandler.UpdateDocument)
+			projectGroup.DELETE("/:id/documents/:docId", projectHandler.DeleteDocument)
 		}
 	}
 

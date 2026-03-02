@@ -32,10 +32,6 @@ func (uc *CreateProjectUseCase) Execute(ctx context.Context, input CreateProject
 		return nil, errors.New("project name is required")
 	}
 
-	if input.Progress < 0 || input.Progress > 100 {
-		return nil, errors.New("progress must be between 0 and 100")
-	}
-
 	if input.EndDate != nil && input.EndDate.Before(input.StartDate) {
 		return nil, errors.New("end date cannot be before start date")
 	}
@@ -51,7 +47,7 @@ func (uc *CreateProjectUseCase) Execute(ctx context.Context, input CreateProject
 		Name:        input.Name,
 		Description: input.Description,
 		Status:      input.Status,
-		Progress:    input.Progress,
+		Progress:    0, // tính từ task hoàn thành, không nhập tay
 		StartDate:   input.StartDate,
 		EndDate:     input.EndDate,
 		Tasks:       []project.Task{},

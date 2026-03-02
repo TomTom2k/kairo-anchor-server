@@ -9,11 +9,18 @@ import (
 )
 
 type ProjectHandler struct {
-	createProject *projectUC.CreateProjectUseCase
-	updateProject *projectUC.UpdateProjectUseCase
-	deleteProject *projectUC.DeleteProjectUseCase
-	getProject    *projectUC.GetProjectUseCase
-	listProjects  *projectUC.ListProjectsUseCase
+	createProject   *projectUC.CreateProjectUseCase
+	updateProject   *projectUC.UpdateProjectUseCase
+	deleteProject   *projectUC.DeleteProjectUseCase
+	getProject      *projectUC.GetProjectUseCase
+	listProjects    *projectUC.ListProjectsUseCase
+	addTask         *projectUC.AddTaskUseCase
+	updateTask      *projectUC.UpdateTaskUseCase
+	deleteTask      *projectUC.DeleteTaskUseCase
+	reorderTasks    *projectUC.ReorderTasksUseCase
+	addDocument     *projectUC.AddDocumentUseCase
+	updateDocument  *projectUC.UpdateDocumentUseCase
+	deleteDocument  *projectUC.DeleteDocumentUseCase
 }
 
 func NewProjectHandler(
@@ -22,13 +29,27 @@ func NewProjectHandler(
 	delete *projectUC.DeleteProjectUseCase,
 	get *projectUC.GetProjectUseCase,
 	list *projectUC.ListProjectsUseCase,
+	addTask *projectUC.AddTaskUseCase,
+	updateTask *projectUC.UpdateTaskUseCase,
+	deleteTask *projectUC.DeleteTaskUseCase,
+	reorderTasks *projectUC.ReorderTasksUseCase,
+	addDocument *projectUC.AddDocumentUseCase,
+	updateDocument *projectUC.UpdateDocumentUseCase,
+	deleteDocument *projectUC.DeleteDocumentUseCase,
 ) *ProjectHandler {
 	return &ProjectHandler{
-		createProject: create,
-		updateProject: update,
-		deleteProject: delete,
-		getProject:    get,
-		listProjects:  list,
+		createProject:  create,
+		updateProject:  update,
+		deleteProject:  delete,
+		getProject:     get,
+		listProjects:   list,
+		addTask:        addTask,
+		updateTask:    updateTask,
+		deleteTask:    deleteTask,
+		reorderTasks:  reorderTasks,
+		addDocument:   addDocument,
+		updateDocument: updateDocument,
+		deleteDocument: deleteDocument,
 	}
 }
 
@@ -62,7 +83,7 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 		Name:        req.Name,
 		Description: req.Description,
 		Status:      project.ProjectStatus(req.Status),
-		Progress:    req.Progress,
+		Progress:    0, // tiến độ tính từ task hoàn thành
 		StartDate:   req.StartDate,
 		EndDate:     req.EndDate,
 	}
@@ -110,38 +131,8 @@ func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 		Name:        req.Name,
 		Description: req.Description,
 		Status:      project.ProjectStatus(req.Status),
-		Progress:    req.Progress,
 		StartDate:   req.StartDate,
 		EndDate:     req.EndDate,
-	}
-
-	// Convert DTOs to domain models
-	if req.Tasks != nil {
-		tasks := make([]project.Task, len(req.Tasks))
-		for i, t := range req.Tasks {
-			tasks[i] = project.Task{
-				ID:       t.ID,
-				Title:    t.Title,
-				Status:   project.TaskStatus(t.Status),
-				Priority: project.TaskPriority(t.Priority),
-				DueDate:  t.DueDate,
-			}
-		}
-		input.Tasks = tasks
-	}
-
-	if req.Documents != nil {
-		documents := make([]project.Document, len(req.Documents))
-		for i, d := range req.Documents {
-			documents[i] = project.Document{
-				ID:        d.ID,
-				Name:      d.Name,
-				Type:      d.Type,
-				Size:      d.Size,
-				UpdatedAt: d.UpdatedAt,
-			}
-		}
-		input.Documents = documents
 	}
 
 	p, err := h.updateProject.Execute(c.Request.Context(), input)
@@ -180,6 +171,240 @@ func (h *ProjectHandler) DeleteProject(c *gin.Context) {
 	}
 
 	SendSuccess(c, http.StatusOK, nil, "Project deleted successfully")
+}
+
+// AddTask godoc
+// @Summary Add a task to a project
+// @Tags projects
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Project ID"
+// @Param request body CreateTaskRequest true "Create Task Request"
+// @Success 201 {object} APIResponse{data=ProjectResponse}
+// @Router /projects/{id}/tasks [post]
+func (h *ProjectHandler) AddTask(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Unauthorized")
+		return
+	}
+	projectID := c.Param("id")
+	var req CreateTaskRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		SendError(c, http.StatusBadRequest, ErrCodeValidation, err.Error())
+		return
+	}
+	input := projectUC.AddTaskInput{
+		ProjectID: projectID,
+		UserID:    userID,
+		Title:     req.Title,
+		Status:    project.TaskStatus(req.Status),
+		Priority:  project.TaskPriority(req.Priority),
+		DueDate:   req.DueDate,
+	}
+	p, err := h.addTask.Execute(c.Request.Context(), input)
+	if err != nil {
+		SendError(c, http.StatusBadRequest, "ADD_TASK_FAILED", err.Error())
+		return
+	}
+	SendSuccess(c, http.StatusCreated, toProjectResponse(p), "Task added")
+}
+
+// UpdateTask godoc
+// @Summary Update a task
+// @Tags projects
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Project ID"
+// @Param taskId path string true "Task ID"
+// @Param request body UpdateTaskRequest true "Update Task Request"
+// @Success 200 {object} APIResponse{data=ProjectResponse}
+// @Router /projects/{id}/tasks/{taskId} [put]
+func (h *ProjectHandler) UpdateTask(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Unauthorized")
+		return
+	}
+	projectID := c.Param("id")
+	taskID := c.Param("taskId")
+	var req UpdateTaskRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		SendError(c, http.StatusBadRequest, ErrCodeValidation, err.Error())
+		return
+	}
+	input := projectUC.UpdateTaskInput{
+		ProjectID: projectID,
+		UserID:    userID,
+		TaskID:    taskID,
+		Title:     req.Title,
+		Status:    ptrToTaskStatus(req.Status),
+		Priority:  ptrToTaskPriority(req.Priority),
+		DueDate:   req.DueDate,
+	}
+	p, err := h.updateTask.Execute(c.Request.Context(), input)
+	if err != nil {
+		SendError(c, http.StatusBadRequest, "UPDATE_TASK_FAILED", err.Error())
+		return
+	}
+	SendSuccess(c, http.StatusOK, toProjectResponse(p), "Task updated")
+}
+
+// DeleteTask godoc
+// @Summary Delete a task
+// @Tags projects
+// @Security BearerAuth
+// @Param id path string true "Project ID"
+// @Param taskId path string true "Task ID"
+// @Success 200 {object} APIResponse{data=ProjectResponse}
+// @Router /projects/{id}/tasks/{taskId} [delete]
+func (h *ProjectHandler) DeleteTask(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Unauthorized")
+		return
+	}
+	projectID := c.Param("id")
+	taskID := c.Param("taskId")
+	p, err := h.deleteTask.Execute(c.Request.Context(), projectID, userID, taskID)
+	if err != nil {
+		SendError(c, http.StatusBadRequest, "DELETE_TASK_FAILED", err.Error())
+		return
+	}
+	SendSuccess(c, http.StatusOK, toProjectResponse(p), "Task deleted")
+}
+
+// ReorderTasks godoc
+// @Summary Reorder tasks
+// @Tags projects
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Project ID"
+// @Param request body ReorderTasksRequest true "Ordered list of task IDs"
+// @Success 200 {object} APIResponse{data=ProjectResponse}
+// @Router /projects/{id}/tasks/order [put]
+func (h *ProjectHandler) ReorderTasks(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Unauthorized")
+		return
+	}
+	projectID := c.Param("id")
+	var req ReorderTasksRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		SendError(c, http.StatusBadRequest, ErrCodeValidation, err.Error())
+		return
+	}
+	p, err := h.reorderTasks.Execute(c.Request.Context(), projectID, userID, req.TaskIDs)
+	if err != nil {
+		SendError(c, http.StatusBadRequest, "REORDER_TASKS_FAILED", err.Error())
+		return
+	}
+	SendSuccess(c, http.StatusOK, toProjectResponse(p), "Tasks reordered")
+}
+
+// AddDocument godoc
+// @Summary Add a document to a project
+// @Tags projects
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Project ID"
+// @Param request body CreateDocumentRequest true "Create Document Request"
+// @Success 201 {object} APIResponse{data=ProjectResponse}
+// @Router /projects/{id}/documents [post]
+func (h *ProjectHandler) AddDocument(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Unauthorized")
+		return
+	}
+	projectID := c.Param("id")
+	var req CreateDocumentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		SendError(c, http.StatusBadRequest, ErrCodeValidation, err.Error())
+		return
+	}
+	input := projectUC.AddDocumentInput{
+		ProjectID: projectID,
+		UserID:    userID,
+		Name:      req.Name,
+		Type:      req.Type,
+		Size:      req.Size,
+	}
+	p, err := h.addDocument.Execute(c.Request.Context(), input)
+	if err != nil {
+		SendError(c, http.StatusBadRequest, "ADD_DOCUMENT_FAILED", err.Error())
+		return
+	}
+	SendSuccess(c, http.StatusCreated, toProjectResponse(p), "Document added")
+}
+
+// UpdateDocument godoc
+// @Summary Update a document
+// @Tags projects
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Project ID"
+// @Param docId path string true "Document ID"
+// @Param request body UpdateDocumentRequest true "Update Document Request"
+// @Success 200 {object} APIResponse{data=ProjectResponse}
+// @Router /projects/{id}/documents/{docId} [put]
+func (h *ProjectHandler) UpdateDocument(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Unauthorized")
+		return
+	}
+	projectID := c.Param("id")
+	docID := c.Param("docId")
+	var req UpdateDocumentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		SendError(c, http.StatusBadRequest, ErrCodeValidation, err.Error())
+		return
+	}
+	input := projectUC.UpdateDocumentInput{
+		ProjectID:  projectID,
+		UserID:     userID,
+		DocumentID: docID,
+		Name:       req.Name,
+		Type:       req.Type,
+		Size:       req.Size,
+	}
+	p, err := h.updateDocument.Execute(c.Request.Context(), input)
+	if err != nil {
+		SendError(c, http.StatusBadRequest, "UPDATE_DOCUMENT_FAILED", err.Error())
+		return
+	}
+	SendSuccess(c, http.StatusOK, toProjectResponse(p), "Document updated")
+}
+
+// DeleteDocument godoc
+// @Summary Delete a document
+// @Tags projects
+// @Security BearerAuth
+// @Param id path string true "Project ID"
+// @Param docId path string true "Document ID"
+// @Success 200 {object} APIResponse{data=ProjectResponse}
+// @Router /projects/{id}/documents/{docId} [delete]
+func (h *ProjectHandler) DeleteDocument(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		SendError(c, http.StatusUnauthorized, ErrCodeUnauthorized, "Unauthorized")
+		return
+	}
+	projectID := c.Param("id")
+	docID := c.Param("docId")
+	p, err := h.deleteDocument.Execute(c.Request.Context(), projectID, userID, docID)
+	if err != nil {
+		SendError(c, http.StatusBadRequest, "DELETE_DOCUMENT_FAILED", err.Error())
+		return
+	}
+	SendSuccess(c, http.StatusOK, toProjectResponse(p), "Document deleted")
 }
 
 // GetProject godoc
@@ -267,13 +492,16 @@ func toProjectResponse(p *project.Project) *ProjectResponse {
 		}
 	}
 
+	// Tiến độ luôn tính từ task hoàn thành
+	progress := project.ProgressFromTasks(p.Tasks)
+
 	return &ProjectResponse{
 		ID:          p.ID.String(),
 		UserID:      p.UserID.String(),
 		Name:        p.Name,
 		Description: p.Description,
 		Status:      string(p.Status),
-		Progress:    p.Progress,
+		Progress:    progress,
 		StartDate:   p.StartDate,
 		EndDate:     p.EndDate,
 		Tasks:       tasks,
@@ -281,4 +509,20 @@ func toProjectResponse(p *project.Project) *ProjectResponse {
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
 	}
+}
+
+func ptrToTaskStatus(s *string) *project.TaskStatus {
+	if s == nil {
+		return nil
+	}
+	v := project.TaskStatus(*s)
+	return &v
+}
+
+func ptrToTaskPriority(s *string) *project.TaskPriority {
+	if s == nil {
+		return nil
+	}
+	v := project.TaskPriority(*s)
+	return &v
 }

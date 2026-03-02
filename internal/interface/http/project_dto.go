@@ -30,14 +30,42 @@ type CreateProjectRequest struct {
 }
 
 type UpdateProjectRequest struct {
-	Name        string        `json:"name,omitempty" example:"Hệ thống quản lý kho"`
-	Description string        `json:"description,omitempty" example:"Xây dựng hệ thống quản lý kho thông minh"`
-	Status      string        `json:"status,omitempty" binding:"omitempty,oneof=active pending completed" example:"active"`
-	Progress    *int          `json:"progress,omitempty" binding:"omitempty,min=0,max=100" example:"65"`
-	StartDate   *time.Time    `json:"startDate,omitempty" example:"2024-01-15T00:00:00Z"`
-	EndDate     *time.Time    `json:"endDate,omitempty" example:"2024-06-30T00:00:00Z"`
-	Tasks       []TaskDTO     `json:"tasks,omitempty"`
-	Documents   []DocumentDTO `json:"documents,omitempty"`
+	Name        string     `json:"name,omitempty" example:"Hệ thống quản lý kho"`
+	Description string     `json:"description,omitempty" example:"Xây dựng hệ thống quản lý kho thông minh"`
+	Status      string     `json:"status,omitempty" binding:"omitempty,oneof=active pending completed" example:"active"`
+	StartDate   *time.Time `json:"startDate,omitempty" example:"2024-01-15T00:00:00Z"`
+	EndDate     *time.Time `json:"endDate,omitempty" example:"2024-06-30T00:00:00Z"`
+}
+
+type CreateTaskRequest struct {
+	Title    string     `json:"title" binding:"required" example:"Thiết kế Database"`
+	Status   string     `json:"status" binding:"required,oneof=todo in-progress completed" example:"todo"`
+	Priority string     `json:"priority" binding:"required,oneof=low medium high" example:"medium"`
+	DueDate  *time.Time `json:"dueDate,omitempty"`
+}
+
+type UpdateTaskRequest struct {
+	Title    *string    `json:"title,omitempty"`
+	Status   *string    `json:"status,omitempty" binding:"omitempty,oneof=todo in-progress completed"`
+	Priority *string    `json:"priority,omitempty" binding:"omitempty,oneof=low medium high"`
+	DueDate  *time.Time `json:"dueDate,omitempty"`
+}
+
+type ReorderTasksRequest struct {
+	TaskIDs []string `json:"taskIds" binding:"required" example:"id1,id2,id3"`
+}
+
+type CreateDocumentRequest struct {
+	Name string `json:"name" binding:"required" example:"Spec.pdf"`
+	Type string `json:"type" binding:"required" example:"pdf"`
+	Size string `json:"size" example:"2.4 MB"`
+}
+
+type UpdateDocumentRequest struct {
+	Name      *string    `json:"name,omitempty"`
+	Type      *string    `json:"type,omitempty"`
+	Size      *string    `json:"size,omitempty"`
+	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
 }
 
 type ProjectResponse struct {

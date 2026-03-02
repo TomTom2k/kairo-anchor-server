@@ -319,6 +319,304 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/projects": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all projects for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "List all projects",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/http.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/http.ProjectResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new project for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Create a new project",
+                "parameters": [
+                    {
+                        "description": "Create Project Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.CreateProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/http.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/http.ProjectResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/projects/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a project by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Get a project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/http.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/http.ProjectResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing project",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Update a project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Project Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.UpdateProjectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/http.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/http.ProjectResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a project by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Delete a project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.APIErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -391,6 +689,76 @@ const docTemplate = `{
                 }
             }
         },
+        "http.CreateProjectRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "startDate",
+                "status"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Xây dựng hệ thống quản lý kho thông minh"
+                },
+                "endDate": {
+                    "type": "string",
+                    "example": "2024-06-30T00:00:00Z"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Hệ thống quản lý kho"
+                },
+                "progress": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0,
+                    "example": 65
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2024-01-15T00:00:00Z"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "pending",
+                        "completed"
+                    ],
+                    "example": "active"
+                }
+            }
+        },
+        "http.DocumentDTO": {
+            "type": "object",
+            "required": [
+                "name",
+                "type"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "d1"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Spec tài liệu.pdf"
+                },
+                "size": {
+                    "type": "string",
+                    "example": "2.4 MB"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "pdf"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2024-01-20T00:00:00Z"
+                }
+            }
+        },
         "http.ForgotPasswordRequest": {
             "type": "object",
             "required": [
@@ -417,6 +785,63 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "password123"
+                }
+            }
+        },
+        "http.ProjectResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Xây dựng hệ thống quản lý kho thông minh"
+                },
+                "documents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/http.DocumentDTO"
+                    }
+                },
+                "endDate": {
+                    "type": "string",
+                    "example": "2024-06-30T00:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "1"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Hệ thống quản lý kho"
+                },
+                "progress": {
+                    "type": "integer",
+                    "example": 65
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2024-01-15T00:00:00Z"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/http.TaskDTO"
+                    }
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "userId": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 }
             }
         },
@@ -455,6 +880,94 @@ const docTemplate = `{
                     "example": "oldpassword123"
                 }
             }
+        },
+        "http.TaskDTO": {
+            "type": "object",
+            "required": [
+                "priority",
+                "status",
+                "title"
+            ],
+            "properties": {
+                "dueDate": {
+                    "type": "string",
+                    "example": "2024-02-01T00:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "t1"
+                },
+                "priority": {
+                    "type": "string",
+                    "enum": [
+                        "low",
+                        "medium",
+                        "high"
+                    ],
+                    "example": "high"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "todo",
+                        "in-progress",
+                        "completed"
+                    ],
+                    "example": "completed"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Thiết kế Database"
+                }
+            }
+        },
+        "http.UpdateProjectRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Xây dựng hệ thống quản lý kho thông minh"
+                },
+                "documents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/http.DocumentDTO"
+                    }
+                },
+                "endDate": {
+                    "type": "string",
+                    "example": "2024-06-30T00:00:00Z"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Hệ thống quản lý kho"
+                },
+                "progress": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0,
+                    "example": 65
+                },
+                "startDate": {
+                    "type": "string",
+                    "example": "2024-01-15T00:00:00Z"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "pending",
+                        "completed"
+                    ],
+                    "example": "active"
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/http.TaskDTO"
+                    }
+                }
+            }
         }
     },
     "securityDefinitions": {
@@ -473,8 +986,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/api",
 	Schemes:          []string{},
-	Title:            "Kairo Anchor Authentication API",
-	Description:      "Authentication API with JWT tokens for Kairo Anchor application",
+	Title:            "Kairo Anchor API",
+	Description:      "API with authentication and Project management for Kairo Anchor application",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
